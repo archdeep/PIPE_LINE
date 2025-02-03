@@ -33,7 +33,8 @@ jobs:
       run: terraform -chdir=terraform apply -auto-approve
 
     - name: Extract Public IP
-      run: echo "PUBLIC_IP=$(terraform -chdir=terraform output -raw public_ip)" >> $GITHUB_ENV
+      run: |
+        echo "PUBLIC_IP=$(terraform -chdir=terraform output -raw public_ip | tr -d '\n')" >> $GITHUB_ENV
 
     - name: Install Ansible
       run: |
