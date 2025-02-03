@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
@@ -25,14 +25,22 @@ jobs:
       id: terraform
       run: terraform -chdir=terraform apply -auto-approve
 
+    - name: Wait for EC2 Instance
+      run: sleep 60  # Wait for EC2 instance to be ready
+
     - name: Extract Public IP
       run: echo "PUBLIC_IP=$(terraform -chdir=terraform output -raw public_ip)" >> $GITHUB_ENV
 
     - name: Install Ansible
-      uses: sudo apt update && sudo apt install -y ansible
+      run: |
+        sudo apt update
+        sudo apt install -y ansible
+
+    - name: Update Ansible Inventory
+      run: |
+        echo "[servers]" > ansible/inventory.ini
+        echo "$PUBLIC_IP ansible_user=ubuntu" >> ansible/inventory.ini
 
     - name: Run Ansible Playbook
       run: |
-        ansible-playbook -i ansible/inventory.ini ansible/playbook.yml \
-          --extra-vars "ansible_host=$PUBLIC_IP"
-
+        ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
